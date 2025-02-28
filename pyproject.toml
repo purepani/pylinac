@@ -59,7 +59,11 @@ docs = [
     "autodoc-pydantic>=2.1.0",
 ]
 
-[project.dependency-groups]
+[dependency-groups]
+xim-accel = [
+	"xim-reader-rs>=0.0.2"
+]
+
 dev = [
     "autodoc-pydantic>=2.1.0",
     "furo>=2024.8.6",

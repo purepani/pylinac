@@ -60,6 +60,14 @@ from .scale import MachineScale, convert, wrap360
 from .utilities import decode_binary, is_close, simple_round, uniquify
 from .validators import double_dimension
 
+
+try:
+    import xim_reader
+except ImportError:
+    _has_xim_reader = False
+else:
+    _has_xim_reader = True
+
 ARRAY = "Array"
 DICOM = "DICOM"
 IMAGE = "Image"
@@ -1051,6 +1059,31 @@ class XIM(BaseImage):
             a pre-filtering of image selection.
         """
         super().__init__(path=file_path)
+        if _has_xim_reader:
+            self._rust_import(file_path, read_pixels)
+        else:
+            self._python_import(file_path, read_pixels)
+
+    def _rust_import(self, file_path: str | Path, read_pixels: bool = True):
+        xim = xim_reader.XIMImage(file_path)
+        header = xim.header
+        array = xim.numpy
+        histogram = xim.histogram
+        properties = xim.properties
+
+        self.format_id = header.identifier
+        self.format_version = header.version
+        self.img_width_px = header.width
+        self.img_height_px = header.height
+        self.bits_per_pixel = header.bits_per_pixel
+        self.bytes_per_pixel = header.bytes_per_pixel
+        self.array = array
+        self.num_hist_bins = len(histogram)
+        self.histogram = histogram
+        self.num_properties = len(properties)
+        self.properties = properties
+
+    def _python_import(self, file_path: str | Path, read_pixels: bool = True):
         with open(self.path, "rb") as xim:
             self.format_id = decode_binary(xim, str, 8)
             self.format_version = decode_binary(xim, int)
